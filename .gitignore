@@ -1,0 +1,24 @@
+# Neo4j - Archivos generados por la base de datos
+
+#Base de datos binaria
+/data/databases/ 
+#Transacciones activas
+/data/transactions/
+#Archivos de registro
+/logs/
+#Plugins instalados manualmente           
+/plugins/  
+#Archivos de ejecución temporal       
+/run/                
+
+# Credenciales y configuraciones sensibles
+
+#Variables de entorno
+*.env 
+#Configuración local                 
+neo4j.conf
+
+# Archivos temporales y del sistema
+*.tmp
+*.bak
+~$*
