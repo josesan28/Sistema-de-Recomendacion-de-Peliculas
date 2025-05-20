@@ -1,17 +1,9 @@
 import os
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
-from flask import Flask
 
 # Cargar variables de entorno
 load_dotenv()
-
-
-def create_app():
-        app = Flask(__name__)
-        app.config['SECRET_KEY'] = "Olvidonaaaaaa"
-
-        return app
 
 class Neo4jConnection:
     # Función para inicializar la clase obteniendo las credenciales

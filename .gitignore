@@ -22,3 +22,6 @@ neo4j.conf
 *.tmp
 *.bak
 ~$*
+
+__pycache__/
+*.py[cod]
