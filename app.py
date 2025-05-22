@@ -5,6 +5,7 @@ from routes.actors_routes import actors_bp
 from routes.genres_routes import genres_bp
 from routes.directors_routes import directors_bp 
 from routes.recommendations_routes import recommendations_bp
+from routes.auth_routes import auth_bp
 
 def create_app():
     app = Flask(__name__)
@@ -16,5 +17,6 @@ def create_app():
     app.register_blueprint(genres_bp)
     app.register_blueprint(directors_bp)
     app.register_blueprint(recommendations_bp)
+    app.register_blueprint(auth_bp)
 
     return app
