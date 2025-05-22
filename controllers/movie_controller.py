@@ -20,17 +20,6 @@ class MovieController:
         return result[0] if result else None
 
     @staticmethod
-    def get_movies_by_season(season_name, min_weight=0.5):
-        query = """
-        MATCH (m:Movie)-[r:APPROPIATE_FOR_SEASON]->(s:Season {name: $season_name})
-        WHERE r.peso >= $min_weight
-        RETURN m {.id, .title, .year, season_weight: r.peso} AS movie
-        ORDER BY r.peso DESC
-        LIMIT 20
-        """
-        return Neo4jConnection().query(query, {"season_name": season_name, "min_weight": min_weight})
-
-    @staticmethod
     def get_top_movies(limit=10):
         query = """
         MATCH (m:Movie)
@@ -40,6 +29,18 @@ class MovieController:
         LIMIT $limit
         """
         return Neo4jConnection().query(query, {"limit": limit})
+
+
+    @staticmethod
+    def get_movies_by_season(season_name, min_weight=0.5):
+        query = """
+        MATCH (m:Movie)-[r:APPROPIATE_FOR_SEASON]->(s:Season {name: $season_name})
+        WHERE r.peso >= $min_weight
+        RETURN m {.id, .title, .year, season_weight: r.peso} AS movie
+        ORDER BY r.peso DESC
+        LIMIT 20
+        """
+        return Neo4jConnection().query(query, {"season_name": season_name, "min_weight": min_weight})
 
     @staticmethod
     def search_movies(title_keyword):

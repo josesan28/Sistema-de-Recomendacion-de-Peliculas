@@ -14,14 +14,14 @@ def get_top_movies():
     movies = MovieController.get_top_movies(limit)
     return jsonify(movies)
 
-@movies_bp.route('/movies/search')
-def search_movies():
-    keyword = request.args.get('q', default="", type=str)
-    movies = MovieController.search_movies(keyword)
-    return jsonify(movies)
-
 @movies_bp.route('/movies/season/<season_name>')
 def get_movies_by_season(season_name):
     min_weight = request.args.get('min_weight', default=0.5, type=float)
     movies = MovieController.get_movies_by_season(season_name, min_weight)
+    return jsonify(movies)
+
+@movies_bp.route('/movies/search')
+def search_movies():
+    keyword = request.args.get('q', default="", type=str)
+    movies = MovieController.search_movies(keyword)
     return jsonify(movies)

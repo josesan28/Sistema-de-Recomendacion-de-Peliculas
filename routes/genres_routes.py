@@ -3,6 +3,13 @@ from controllers.genre_controller import GenreController
 
 genres_bp = Blueprint('genres', __name__)
 
+@genres_bp.route('/genres/<genre_name>')
+def get_genre(genre_name):
+    genre = GenreController.get_genre(genre_name)
+    if not genre:
+        return jsonify({"error": "Genre not found"}), 404
+    return jsonify(genre)
+
 @genres_bp.route('/genres')
 def get_all_genres():
     genres = GenreController.get_all_genres()

@@ -3,6 +3,13 @@ from controllers.actor_controller import ActorController
 
 actors_bp = Blueprint('actors', __name__)
 
+@actors_bp.route('/actors/<int:actor_id>')
+def get_actor(actor_id):
+    actor = ActorController.get_actor(actor_id)
+    if not actor:
+        return jsonify({"error": "Actor not found"}), 404
+    return jsonify(actor)
+
 @actors_bp.route('/actors')
 def get_all_actors():
     actors = ActorController.get_all_actors()
