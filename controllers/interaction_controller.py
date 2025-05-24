@@ -16,24 +16,25 @@ class InteractionController:
         SET r.type = $interaction_type,
             r.weight = $weight,
             r.timestamp = datetime()
-        
-        WITH r, m
+
+        WITH m, $weight AS weight
         MATCH (m)-[rel:HAS_GENRE]->(g:Genre)
-        SET rel.peso = rel.peso + ($weight * 0.10)
-        
+        SET rel.peso = rel.peso + (weight * 0.10)
+
+        WITH m, weight
         MATCH (m)-[rel:DIRECTED_BY]->(d:Director)
-        SET rel.peso = rel.peso + ($weight * 0.10)
-        
+        SET rel.peso = rel.peso + (weight * 0.10)
+
+        WITH m, weight
         MATCH (m)-[rel:HAS_ACTOR]->(a:Actor)
-        SET rel.peso = rel.peso + ($weight * 0.07)
-        
+        SET rel.peso = rel.peso + (weight * 0.07)
+
+        WITH m, weight
         MATCH (m)-[rel:APPROPIATE_FOR_SEASON]->(s:Season)
-        SET rel.peso = rel.peso + ($weight * 0.05)
-        
-        RETURN {
-            movie: m {.id, .title},
-            updated_relations: COUNT(*)
-        } AS result
+        SET rel.peso = rel.peso + (weight * 0.05)
+
+        WITH m {.id, .title} AS movie, COUNT(*) AS updated_relations
+        RETURN { movie: movie, updated_relations: updated_relations } AS result
         """
         with Neo4jConnection() as conn:
             result = conn.query(query, {

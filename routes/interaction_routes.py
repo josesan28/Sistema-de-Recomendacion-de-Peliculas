@@ -12,7 +12,9 @@ def add_interaction():
             movie_id=data['movie_id'],
             interaction_type=data['type']
         )
-        return jsonify({"message": "Interaction recorded", "data": result[0]})
+        if not result:
+            return jsonify({"error": "No se pudo registrar la interaccion"}), 400
+        return jsonify({"message": "Interaction recorded", "data": result})
     except KeyError:
         return jsonify({"error": "Missing required fields"}), 400
     except Exception as e:
