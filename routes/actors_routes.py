@@ -3,7 +3,7 @@ from controllers.actor_controller import ActorController
 
 actors_bp = Blueprint('actors', __name__)
 
-@actors_bp.route('/actors/<int:actor_id>')
+@actors_bp.route('/actors/<actor_id>')
 def get_actor(actor_id):
     actor = ActorController.get_actor(actor_id)
     if not actor:
@@ -23,6 +23,5 @@ def search_actors():
 
 @actors_bp.route('/actors/<actor_name>/movies')
 def get_movies_by_actor(actor_name):
-    min_weight = request.args.get('min_weight', default=0.5, type=float)
-    movies = ActorController.get_movies_by_actor(actor_name, min_weight)
+    movies = ActorController.get_movies_by_actor(actor_name)
     return jsonify(movies)
