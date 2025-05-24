@@ -5,8 +5,12 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
+    print("Datos recibidos:", request.json)
     data = request.get_json()
     try:
+        if not data.get('email') or not data.get('password'):
+            return jsonify({"error": "Email and password are required"}), 400
+            
         user = AuthController.register_user(
             email=data['email'],
             password=data['password'],
@@ -14,6 +18,7 @@ def register():
         )
         return jsonify({"message": "Usuario registrado", "user": user}), 201
     except Exception as e:
+        print("Error en registro:", str(e))
         return jsonify({"error": str(e)}), 400
 
 @auth_bp.route('/login', methods=['POST'])
