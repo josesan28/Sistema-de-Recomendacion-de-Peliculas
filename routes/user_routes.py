@@ -9,12 +9,12 @@ def create_user():
     user = UserController.create_user(data)
     return jsonify(user)
 
-@users_bp.route('/users/<user_id>')
+@users_bp.route('/users/id/<user_id>')
 def get_user(user_id):
     user = UserController.get_user_by_id(user_id)
     return jsonify(user)
 
-@users_bp.route('/users/<user_email>')
+@users_bp.route('/users/email/<user_email>')
 def get_user_by_email(user_email):
     user = UserController.get_user_by_email(user_email)
     return jsonify(user) if user else ("User not found", 404)
