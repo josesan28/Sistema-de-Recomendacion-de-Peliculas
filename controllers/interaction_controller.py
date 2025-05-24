@@ -5,7 +5,6 @@ class InteractionController:
     
     @staticmethod
     def add_interaction(user_id, movie_id, interaction_type):
-        
         if interaction_type == 'like':
             weight = 1.0
         else:
@@ -34,11 +33,13 @@ class InteractionController:
         RETURN {
             movie: m {.id, .title},
             updated_relations: COUNT(*)
-        }
+        } AS result
         """
-        return Neo4jConnection().query(query, {
-            "user_id": user_id,
-            "movie_id": movie_id,
-            "interaction_type": interaction_type,
-            "weight": weight
-        })
+        with Neo4jConnection() as conn:
+            result = conn.query(query, {
+                "user_id": user_id,
+                "movie_id": movie_id,
+                "interaction_type": interaction_type,
+                "weight": weight
+            })
+            return result[0] if result else None

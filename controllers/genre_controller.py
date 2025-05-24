@@ -5,14 +5,21 @@ class GenreController:
     def get_genre(genre_name):
         query = """
         MATCH (g:Genre {name: $genre_name})
-        RETURN g
+        RETURN g {.name} AS genre
         """
-        return Neo4jConnection().query(query, {"genre_name": genre_name})
+        with Neo4jConnection() as conn:
+            result = conn.query(query, {"genre_name": genre_name})
+            return result[0] if result else None
 
     @staticmethod
     def get_all_genres():
-        query = "MATCH (g:Genre) RETURN g"
-        return Neo4jConnection().query(query)
+        query = """
+        MATCH (g:Genre)
+        RETURN g {.name} AS genre
+        ORDER BY g.name
+        """
+        with Neo4jConnection() as conn:
+            return conn.query(query)
     
     @staticmethod
     def get_movies_by_genre(genre_name, min_weight=0.5):
@@ -23,4 +30,5 @@ class GenreController:
         ORDER BY r.peso DESC
         LIMIT 20
         """
-        return Neo4jConnection().query(query, {"genre_name": genre_name, "min_weight": min_weight})
+        with Neo4jConnection() as conn:
+            return conn.query(query, {"genre_name": genre_name, "min_weight": min_weight})

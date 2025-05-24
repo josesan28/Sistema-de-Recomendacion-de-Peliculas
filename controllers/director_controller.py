@@ -5,14 +5,21 @@ class DirectorController:
     def get_director(director_id):
         query = """
         MATCH (d:Director {id: $director_id})
-        RETURN d
+        RETURN d {.id, .name} AS director
         """
-        return Neo4jConnection().query(query, {"director_id": director_id})
+        with Neo4jConnection() as conn:
+            result = conn.query(query, {"director_id": director_id})
+            return result[0] if result else None
 
     @staticmethod
     def get_all_directors():
-        query = "MATCH (d:Director) RETURN d"
-        return Neo4jConnection().query(query)
+        query = """
+        MATCH (d:Director)
+        RETURN d {.id, .name} AS director
+        ORDER BY d.name
+        """
+        with Neo4jConnection() as conn:
+            return conn.query(query)
 
     @staticmethod
     def get_movies_by_director(director_name, min_weight=0.5):
@@ -23,4 +30,5 @@ class DirectorController:
         ORDER BY r.peso DESC
         LIMIT 20
         """
-        return Neo4jConnection().query(query, {"director_name": director_name, "min_weight": min_weight})
+        with Neo4jConnection() as conn:
+            return conn.query(query, {"director_name": director_name, "min_weight": min_weight})

@@ -30,8 +30,10 @@ class MovieRecommenderController:
         WITH gds.util.asNode(nodeId) AS movie, score
         WHERE movie:Movie
           AND NOT EXISTS((:User {id: $user_id})-[:RATED]->(movie))
-        RETURN movie {.*, score: score}
+        RETURN movie {.id, .title, .year, score: score} AS recommendation
         ORDER BY score DESC
         LIMIT $top_n
         """
-        return Neo4jConnection().query(query, {"user_id": user_id, "top_n": top_n})
+        with Neo4jConnection() as conn:
+            result = conn.query(query, {"user_id": user_id, "top_n": top_n})
+            return result if result else []
