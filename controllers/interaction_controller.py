@@ -5,11 +5,12 @@ class InteractionController:
 
     @staticmethod
     def add_interaction(user_id, movie_id, interaction_type):
-        if interaction_type == 'like':
-            weight = 1.0
-        else:
-            weight = -1.0
+        if interaction_type not in ['like', 'dislike']:
+            raise ValueError("El tipo de interacción debe ser 'like' o 'dislike'.")
 
+        weight = 1.0 if interaction_type == 'like' else -1.0
+
+        # Verificar existencia de nodos
         check_query = """
         MATCH (u:User {id: $user_id})
         OPTIONAL MATCH (m:Movie {id: $movie_id})
@@ -30,6 +31,7 @@ class InteractionController:
             if not check['movie_exists']:
                 raise ValueError("La película no existe")
 
+        # Registrar interacción y actualizar preferencias
         interaction_query = """
         MATCH (u:User {id: $user_id}), (m:Movie {id: $movie_id})
         MERGE (u)-[r:INTERACTED]->(m)
@@ -37,34 +39,44 @@ class InteractionController:
             r.weight = $weight,
             r.timestamp = datetime()
 
-       WITH m, $weight AS weight
+        WITH u, m, $weight AS weight
 
-        OPTIONAL MATCH (m)-[grel:HAS_GENRE]->(:Genre)
-        SET grel.peso = coalesce(grel.peso, 0) + (weight * 0.10)
-        WITH m, weight, COUNT(grel) AS genre_updated
+        // Actualizar y obtener pesos de Géneros
+        OPTIONAL MATCH (m)-[:HAS_GENRE]->(g:Genre)
+        MERGE (u)-[ug:USER_GENRE_PREFERENCE]->(g)
+        SET ug.peso = coalesce(ug.peso, 0) + (weight * 0.10)
+        WITH u, m, weight, COLLECT({name: g.name, peso: ug.peso}) AS genres
 
-        OPTIONAL MATCH (m)-[drel:DIRECTED_BY]->(:Director)
-        SET drel.peso = coalesce(drel.peso, 0) + (weight * 0.10)
-        WITH m, weight, genre_updated, COUNT(drel) AS director_updated
+        // Actualizar y obtener pesos de Directores
+        OPTIONAL MATCH (m)-[:DIRECTED_BY]->(d:Director)
+        MERGE (u)-[ud:USER_DIRECTOR_PREFERENCE]->(d)
+        SET ud.peso = coalesce(ud.peso, 0) + (weight * 0.10)
+        WITH u, m, weight, genres, COLLECT({name: d.name, peso: ud.peso}) AS directors
 
-        OPTIONAL MATCH (m)-[arel:HAS_ACTOR]->(:Actor)
-        SET arel.peso = coalesce(arel.peso, 0) + (weight * 0.07)
-        WITH m, weight, genre_updated, director_updated, COUNT(arel) AS actor_updated
+        // Actualizar y obtener pesos de Actores
+        OPTIONAL MATCH (m)-[:HAS_ACTOR]->(a:Actor)
+        MERGE (u)-[ua:USER_ACTOR_PREFERENCE]->(a)
+        SET ua.peso = coalesce(ua.peso, 0) + (weight * 0.07)
+        WITH u, m, weight, genres, directors, COLLECT({name: a.name, peso: ua.peso}) AS actors
 
-        OPTIONAL MATCH (m)-[srel:APPROPIATE_FOR_SEASON]->(:Season)
-        SET srel.peso = coalesce(srel.peso, 0) + (weight * 0.05)
-        WITH m {.id, .title} AS movie, genre_updated, director_updated, actor_updated, COUNT(srel) AS season_updated
+        // Actualizar y obtener pesos de Temporadas
+        OPTIONAL MATCH (m)-[:APPROPIATE_FOR_SEASON]->(s:Season)
+        MERGE (u)-[us:USER_SEASON_PREFERENCE]->(s)
+        SET us.peso = coalesce(us.peso, 0) + (weight * 0.05)
+        WITH m, genres, directors, actors, COLLECT({name: s.name, peso: us.peso}) AS seasons
 
         RETURN {
-        movie: movie,
-        updated: {
-            genre: genre_updated,
-            director: director_updated,
-            actor: actor_updated,
-            season: season_updated
-        }
+            movie: {id: m.id, title: m.title},
+            updated: {
+                genres: genres,
+                directors: directors,
+                actors: actors,
+                seasons: seasons
+            }
         } AS result
+
         """
+
         with Neo4jConnection() as conn:
             result = conn.query(interaction_query, {
                 "user_id": user_id,
