@@ -85,7 +85,6 @@ class InteractionController:
                 WITH u, s, weight WHERE s IS NOT NULL
                 MERGE (u)-[us:USER_SEASON_PREFERENCE]->(s)
                 SET us.peso = coalesce(us.peso, 0) + (weight * 0.05)
-                WITH s
                 RETURN COLLECT({
                     name: coalesce(s.name, s.nombre, "Unknown"), 
                     peso: us.peso
