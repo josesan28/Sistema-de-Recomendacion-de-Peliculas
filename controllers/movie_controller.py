@@ -43,3 +43,18 @@ class MovieController:
         """
         with Neo4jConnection() as conn:
             return conn.query(query, {"keyword": title_keyword})
+        
+    @staticmethod
+    def get_top_movies(limit=10):
+        """Obtiene las películas más populares basadas en interacciones positivas"""
+        query = """
+        MATCH (m:Movie)
+        OPTIONAL MATCH (m)<-[r:INTERACTED]-()
+        WHERE r.weight > 0
+        WITH m, COUNT(r) AS positive_interactions
+        RETURN m {.id, .title, .year, popularity: positive_interactions} AS movie
+        ORDER BY positive_interactions DESC, m.year DESC
+        LIMIT $limit
+        """
+        with Neo4jConnection() as conn:
+            return conn.query(query, {"limit": limit})
