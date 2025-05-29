@@ -25,3 +25,7 @@ neo4j.conf
 
 __pycache__/
 *.py[cod]
+
+package-lock.json
+
+node_modules/

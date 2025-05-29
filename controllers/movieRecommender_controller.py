@@ -3,7 +3,7 @@ import random
 
 class MovieRecommenderController:
     @staticmethod
-    def get_recommendations_for_user(user_id, limit=10):
+    def get_recommendations_for_user(user_id, limit=15):
 
         query = """
         MATCH (u:User {id: $user_id})

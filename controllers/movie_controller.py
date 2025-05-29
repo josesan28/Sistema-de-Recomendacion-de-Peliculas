@@ -32,7 +32,7 @@ class MovieController:
             return None
 
     @staticmethod
-    def get_all_movies(limit=50):
+    def get_all_movies(limit=150):
         query = """
         MATCH (m:Movie)
         OPTIONAL MATCH (m)-[:HAS_GENRE]->(g:Genre)
