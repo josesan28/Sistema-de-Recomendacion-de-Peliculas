@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { Search, Star, Heart, ThumbsDown, User, Film, Clock, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5001';
@@ -175,11 +175,17 @@ const MovieApp = () => {
         console.log('Respuesta de autenticación:', data);
         
         if (response.ok) {
+          if (!data.user?.id) {
+            throw new Error('El servidor no devolvió un ID de usuario válido');
+          }
+          
           const userData = {
-            id: data.user?.id || `user_${Date.now()}`,
-            email: data.user?.email || email,
-            name: data.user?.name || name || email.split('@')[0]
+            id: data.user.id,  
+            email: data.user.email,
+            name: data.user.name
           };
+          
+          console.log('Usuario autenticado:', userData);
           setCurrentUser(userData);
           showNotification(
             isLogin ? '¡Bienvenido de vuelta!' : '¡Cuenta creada exitosamente!',
@@ -193,13 +199,7 @@ const MovieApp = () => {
         showNotification(error.message || 'Error en autenticación', 'error');
         
         if (error.message.includes('fetch')) {
-          const userData = {
-            id: `user_${Date.now()}`, 
-            email: email,
-            name: name || email.split('@')[0] || 'Usuario Demo'
-          };
-          setCurrentUser(userData);
-          showNotification('Modo demo activado - Usuario creado automáticamente', 'success');
+          showNotification('No se puede conectar con el servidor. Verifica tu conexión.', 'error');
         }
       }
     };

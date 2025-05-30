@@ -40,7 +40,7 @@ class MovieController:
         OPTIONAL MATCH (m)-[:DIRECTED_BY]->(d:Director)
         OPTIONAL MATCH (m)-[:APPROPIATE_FOR_SEASON]->(s)
         WITH m, g, a, d, s
-        ORDER BY m.title
+        ORDER BY rand()
         WITH m, 
             COLLECT(DISTINCT g.name) AS genres,
             COLLECT(DISTINCT a.name)[0..3] AS actors,

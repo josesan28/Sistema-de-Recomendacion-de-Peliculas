@@ -10,45 +10,34 @@ class InteractionController:
 
         weight = 1.0 if interaction_type == 'like' else -1.0
 
-        # Verificar/crear usuario automáticamente y verificar película
-        check_and_create_query = """
-        // Crear usuario si no existe
-        MERGE (u:User {id: $user_id})
-        ON CREATE SET 
-            u.name = 'Usuario ' + $user_id,
-            u.email = $user_id + '@demo.com',
-            u.created_at = datetime()
-        
-        WITH u
-        
-        // Verificar que la película existe
-        OPTIONAL MATCH (m:Movie {id: $movie_id})
-        
-        RETURN 
-            u IS NOT NULL AS user_exists, 
-            m IS NOT NULL AS movie_exists,
-            u.name AS user_name
+        user_check_query = """
+        MATCH (u:User {id: $user_id})
+        RETURN u.id AS user_id, u.name AS user_name, u.email AS user_email
         """
         
         try:
             with Neo4jConnection() as conn:
-                # Verificar/crear usuario y verificar película
-                check = conn.query(check_and_create_query, {
-                    "user_id": user_id,
-                    "movie_id": movie_id
-                })
+                user_check = conn.query(user_check_query, {"user_id": user_id})
                 
-                if not check:
-                    raise ValueError("Error al verificar/crear nodos")
+                if not user_check:
+                    raise ValueError(f"Usuario {user_id} no existe. Debe iniciar sesión correctamente.")
                 
-                check_result = check[0]
-                print(f"DEBUG >> Usuario creado/encontrado: {check_result['user_name']}")
-                print(f"DEBUG >> Película existe: {check_result['movie_exists']}")
-
-                if not check_result['movie_exists']:
+                user_info = user_check[0]
+                print(f"DEBUG >> Usuario encontrado: {user_info['user_name']} ({user_info['user_email']})")
+                
+                movie_check_query = """
+                MATCH (m:Movie {id: $movie_id})
+                RETURN m.id AS movie_id, m.title AS movie_title
+                """
+                
+                movie_check = conn.query(movie_check_query, {"movie_id": movie_id})
+                
+                if not movie_check:
                     raise ValueError(f"La película {movie_id} no existe en la base de datos")
+                
+                movie_info = movie_check[0]
+                print(f"DEBUG >> Película encontrada: {movie_info['movie_title']}")
 
-                # Query principal de interacción (simplificado y más robusto)
                 interaction_query = """
                 // Registrar la interacción básica
                 MATCH (u:User {id: $user_id}), (m:Movie {id: $movie_id})
@@ -98,10 +87,10 @@ class InteractionController:
                     SET us.peso = coalesce(us.peso, 0) + (weight * 0.05)
                 )
 
-                // Retornar información básica sin agregaciones complejas
+                // Retornar información básica
                 RETURN {
-                    user: {id: $user_id, name: 'Usuario ' + $user_id},
-                    movie: {id: $movie_id, title: 'Procesado'},
+                    user: {id: u.id, name: u.name, email: u.email},
+                    movie: {id: m.id, title: m.title},
                     interaction: {type: $interaction_type, weight: $weight},
                     status: 'success'
                 } AS result
@@ -114,11 +103,13 @@ class InteractionController:
                     "weight": weight
                 })
 
-                print(f"DEBUG >> Interacción procesada exitosamente: {result[0] if result else 'Sin resultado'}")
+                print(f"DEBUG >> Interacción procesada exitosamente para usuario real: {user_info['user_name']}")
                 
                 return {
                     "message": f"Interacción '{interaction_type}' registrada exitosamente",
                     "data": result[0] if result else None,
+                    "user": user_info,
+                    "movie": movie_info,
                     "status": "success"
                 }
                 
@@ -128,7 +119,6 @@ class InteractionController:
 
     @staticmethod
     def get_user_interactions(user_id, limit=10):
-        """Obtener las interacciones de un usuario para debugging"""
         query = """
         MATCH (u:User {id: $user_id})-[r:INTERACTED]->(m:Movie)
         RETURN {
@@ -144,7 +134,6 @@ class InteractionController:
 
     @staticmethod
     def get_user_preferences(user_id):
-        """Obtener las preferencias generadas para un usuario"""
         query = """
         MATCH (u:User {id: $user_id})
         
@@ -161,7 +150,7 @@ class InteractionController:
         WITH u, genre_prefs, director_prefs, COLLECT({name: a.name, peso: pa.peso}) AS actor_prefs
         
         RETURN {
-            user: {id: u.id, name: u.name},
+            user: {id: u.id, name: u.name, email: u.email},
             preferences: {
                 genres: [x IN genre_prefs WHERE x.peso > 0.05 | x],
                 directors: [x IN director_prefs WHERE x.peso > 0.05 | x],
