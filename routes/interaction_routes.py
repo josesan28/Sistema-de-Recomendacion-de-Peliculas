@@ -12,12 +12,33 @@ def add_interaction():
             movie_id=data['movie_id'],
             interaction_type=data['type']
         )
-        if not result:
-            return jsonify({"error": "No se pudo registrar la interacción, el query no devolvió datos."}), 400
-        return jsonify({"message": "Interacción registrada", "data": result})
+        return jsonify(result), 200
     except ValueError as ve:
-        return jsonify({"error": str(ve)}), 400
-    except KeyError:
-        return jsonify({"error": "Faltan campos obligatorios"}), 400
+        return jsonify({"error": str(ve), "status": "validation_error"}), 400
+    except KeyError as ke:
+        return jsonify({"error": f"Campo faltante: {str(ke)}", "status": "missing_field"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e), "status": "server_error"}), 500
+
+@interactions_bp.route('/users/<user_id>/interactions', methods=['GET'])
+def get_user_interactions(user_id):
+    """Debug: Ver las interacciones de un usuario"""
+    try:
+        limit = request.args.get('limit', default=10, type=int)
+        interactions = InteractionController.get_user_interactions(user_id, limit)
+        return jsonify({
+            "user_id": user_id,
+            "interactions": interactions,
+            "count": len(interactions)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@interactions_bp.route('/users/<user_id>/preferences', methods=['GET'])
+def get_user_preferences(user_id):
+    """Debug: Ver las preferencias generadas para un usuario"""
+    try:
+        preferences = InteractionController.get_user_preferences(user_id)
+        return jsonify(preferences if preferences else {"message": "Usuario no encontrado"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

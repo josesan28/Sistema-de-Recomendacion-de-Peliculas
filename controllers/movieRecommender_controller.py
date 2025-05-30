@@ -3,7 +3,7 @@ import random
 
 class MovieRecommenderController:
     @staticmethod
-    def get_recommendations_for_user(user_id, limit=15):
+    def get_recommendations_for_user(user_id, limit=10):
 
         query = """
         MATCH (u:User {id: $user_id})
@@ -77,29 +77,33 @@ class MovieRecommenderController:
             actors: actors,
             director: director,
             recommendation_type: 'content_based'
-        } AS recommendation
+        } AS movie
         ORDER BY score DESC
         LIMIT $limit
         """
         
         try:
             with Neo4jConnection() as conn:
+                print(f"DEBUG >> Buscando recomendaciones para usuario: {user_id}")
                 result = conn.query(query, {"user_id": user_id, "limit": limit})
+                print(f"DEBUG >> Recomendaciones encontradas: {len(result)}")
                 
-                # Si no hay suficientes recomendaciones, usar popularidad
                 if len(result) < limit:
                     fallback = MovieRecommenderController._get_popular_movies(
                         user_id, limit - len(result))
                     result.extend(fallback)
                 
-                return result
+                # Extraer solo la parte 'movie' de cada resultado para mantener compatibilidad
+                movies = [item['movie'] for item in result if 'movie' in item]
+                return movies
                 
         except Exception as e:
-            print(f"Error en recomendaciones: {str(e)}")
+            print(f"ERROR >> En get_recommendations_for_user: {str(e)}")
             return MovieRecommenderController._get_popular_movies(user_id, limit)
 
     @staticmethod
     def _get_popular_movies(user_id, limit):
+        """Fallback: películas populares que no ha visto (versión original mejorada)"""
         query = """
         MATCH (u:User {id: $user_id})
         MATCH (m:Movie)
@@ -135,17 +139,29 @@ class MovieRecommenderController:
             actors: actors,
             director: director,
             recommendation_type: 'popular'
-        } AS recommendation
+        } AS movie
         
         ORDER BY score DESC, m.title
         LIMIT $limit
         """
         
-        with Neo4jConnection() as conn:
-            return conn.query(query, {"user_id": user_id, "limit": limit})
+        try:
+            with Neo4jConnection() as conn:
+                print(f"DEBUG >> Buscando películas populares para usuario: {user_id}")
+                result = conn.query(query, {"user_id": user_id, "limit": limit})
+                print(f"DEBUG >> Películas populares encontradas: {len(result)}")
+                if result:
+                    # Extraer solo la parte 'movie' de cada resultado
+                    movies = [item['movie'] for item in result if 'movie' in item]
+                    return movies
+                return []
+        except Exception as e:
+            print(f"ERROR >> En _get_popular_movies: {str(e)}")
+            return []
 
     @staticmethod
     def get_explanation_for_recommendation(user_id, movie_id):
+        """Explicación de por qué se recomendó (versión original)"""
         query = """
         MATCH (u:User {id: $user_id}), (m:Movie {id: $movie_id})
         

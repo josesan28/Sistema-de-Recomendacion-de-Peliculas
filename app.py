@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from routes.user_routes import users_bp
 from routes.movie_routes import movies_bp
 from routes.actors_routes import actors_bp
@@ -11,6 +12,9 @@ from routes.interaction_routes import interactions_bp
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'Olvidonaaaaaa'
+    
+    # Habilitar CORS para todas las rutas
+    CORS(app)
 
     app.register_blueprint(users_bp)
     app.register_blueprint(movies_bp)
